@@ -1,5 +1,5 @@
 use std::{ptr, mem};
-use extensiblemapping::PageId;
+use mappedheap::PageId;
 
 pub trait Node<T> : Sized {
     #[cfg(test)]

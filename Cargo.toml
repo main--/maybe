@@ -1,11 +1,11 @@
 [package]
-name = "mappedheap"
+name = "btree"
 version = "0.1.0"
 authors = ["main() <main@ehvag.de>"]
 
 [dependencies]
-libc = "0.2"
 futex = "0.1"
+mappedheap = "0.1"
 
 [dev-dependencies]
 rand = "0.3"
