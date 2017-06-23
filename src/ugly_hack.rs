@@ -1,55 +1,30 @@
-use std::mem;
 use std::ops::{Deref, DerefMut};
 pub use super::node::{InnerNode as InnerNodeActual, LeafNode as LeafNodeActual};
 
 // no packed enums and no way to force lower alignment -> need ugly hacks
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct Unalign<T>(T);
 
-pub struct InnerNode {
-    // keys: [u64; 255],
-    // children: [PageId; 256],
-    _rustc_pls_trust_me_when_i_say_i_know_the_right_alignment: [u8; 2 + (255 + 256) * 8],
-}
+impl<T> Deref for Unalign<T> {
+    type Target = T;
 
-impl Deref for InnerNode {
-    type Target = InnerNodeActual;
-
-    fn deref(&self) -> &InnerNodeActual {
-        unsafe { mem::transmute(self) }
+    fn deref(&self) -> &T {
+        &self.0
     }
 }
 
-impl DerefMut for InnerNode {
-    fn deref_mut(&mut self) -> &mut InnerNodeActual {
-        unsafe { mem::transmute(self) }
+impl<T> DerefMut for Unalign<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        &mut self.0
     }
 }
 
-impl From<InnerNodeActual> for InnerNode {
-    fn from(cool: InnerNodeActual) -> InnerNode {
-        unsafe { mem::transmute(cool) }
+impl<T> From<T> for Unalign<T> {
+    fn from(t: T) -> Unalign<T> {
+        Unalign(t)
     }
 }
 
-pub struct LeafNode {
-    _rustc_pls_trust_me_when_i_say_i_know_the_right_alignment: [u8; 2 + (255 + 256) * 8],
-}
-
-impl Deref for LeafNode {
-    type Target = LeafNodeActual;
-
-    fn deref(&self) -> &LeafNodeActual {
-        unsafe { mem::transmute(self) }
-    }
-}
-
-impl DerefMut for LeafNode {
-    fn deref_mut(&mut self) -> &mut LeafNodeActual {
-        unsafe { mem::transmute(self) }
-    }
-}
-
-impl From<LeafNodeActual> for LeafNode {
-    fn from(cool: LeafNodeActual) -> LeafNode {
-        unsafe { mem::transmute(cool) }
-    }
-}
+pub type InnerNode = Unalign<InnerNodeActual>;
+pub type LeafNode = Unalign<LeafNodeActual>;
