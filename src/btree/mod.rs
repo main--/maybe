@@ -66,8 +66,18 @@ impl MappedBTree {
         }
     }
 
-    pub fn insert(&self, key: u64, val: u64) {
+    pub fn insert(&self, key: u64, val: u64) -> Option<u64> {
         let (mut wpath, split_root) = self.wlock_subtree(key, |x| !x.full());
+
+        match *wpath.last_mut().unwrap().0 {
+            Leaf(ref mut l) => {
+                let i = l.find_slot(key);
+                if l.keys().get(i) == Some(&key) {
+                    return Some(mem::replace(&mut l.content_mut()[i], val));
+                }
+            }
+            _ => (),
+        }
 
         let root_bonus = if split_root { 2 } else { 0 };
         // alloc new pages
@@ -106,6 +116,7 @@ impl MappedBTree {
                 Leaf(ref mut l) => l.insert(key, val),
             }
         }
+        None
     }
 
     pub fn remove(&self, key: u64) -> Option<u64> {
@@ -452,13 +463,14 @@ mod tests {
         for &i in &values {
             assert_eq!(tree.get(i), None);
             assert_eq!(tree2.get(i), None);
-            tree.insert(i, i);
+            assert_eq!(tree.insert(i, i), None);
+            assert_eq!(tree2.insert(i, i), Some(i));
             assert_eq!(tree.get(i), Some(i));
             assert_eq!(tree2.get(i), Some(i));
         }
 
         assert_eq!(tree.get(size), None);
-        tree2.insert(size, size);
+        assert_eq!(tree2.insert(size, size), None);
         assert_eq!(tree.get(size), Some(size));
 
         for &i in &values {
@@ -474,5 +486,8 @@ mod tests {
             assert_eq!(tree.remove(i), None);
             assert_eq!(tree.get(i), None);
         }
+
+        assert_eq!(tree2.remove(size), Some(size));
+        assert_eq!(tree2.remove(size), None);
     }
 }

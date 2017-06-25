@@ -6,6 +6,7 @@ pub trait Node<T> : Sized {
     fn debug(&self);
     fn keys(&self) -> &[u64];
     fn content(&self) -> &[T];
+    fn content_mut(&mut self) -> &mut [T];
     fn count(&self) -> usize;
     fn half_full(&self) -> bool {
         self.count() <= 127
@@ -22,7 +23,7 @@ pub trait Node<T> : Sized {
 
     fn remove(&mut self, key: u64) -> Option<T> {
         let i = self.find_slot(key);
-        if self.keys()[i] == key {
+        if self.keys().get(i) == Some(&key) {
             Some(self.remove_idx(i).1)
         } else {
             None
@@ -40,6 +41,10 @@ pub trait Node<T> : Sized {
             Ok(i) => i,
             Err(i) => i,
         }
+    }
+
+    fn contains(&self, key: u64) -> bool {
+        self.keys().get(self.find_slot(key)) == Some(&key)
     }
 }
 
@@ -75,6 +80,10 @@ impl Node<PageId> for InnerNode {
 
     fn content(&self) -> &[PageId] {
         &self.children[.. self.count() + 1]
+    }
+
+    fn content_mut(&mut self) -> &mut [PageId] {
+        &mut self.children[.. self.count_ as usize + 1]
     }
 
     fn count(&self) -> usize {
@@ -239,6 +248,10 @@ impl Node<u64> for LeafNode {
 
     fn content(&self) -> &[u64] {
         &self.data[..self.count()]
+    }
+
+    fn content_mut(&mut self) -> &mut [PageId] {
+        &mut self.data[.. self.count_ as usize]
     }
 
     fn count(&self) -> usize {
